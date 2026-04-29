@@ -166,3 +166,21 @@ Em vez de mexer diretamente nos pixels:
 * **Fronteira de decisão**
 
 ---
+
+## Tabela comparativa dos resultados
+
+Resultados extraídos das saídas atualmente salvas em cada notebook (sem reexecução).
+
+| Notebook | Tipo | Métrica limpa | Métrica contaminada | ASR limpa | ASR contaminada | Observações |
+|---|---|---|---|---|---|---|
+| [stealthy/main_c.ipynb](stealthy/main_c.ipynb) | Classificação | Acurácia = 0.8615 | Acurácia = 0.8462 | 0.2432 | 0.2703 | Trigger stealthy |
+| [stealthy/main_r.ipynb](stealthy/main_r.ipynb) | Regressão | MSE = 0.0032 | MSE = 0.0042 | 0.2182 | 0.1636 | ASR calculada com trigger stealthy |
+| [trigger_explicito/main_r.ipynb](trigger_explicito/main_r.ipynb) | Regressão | MSE = 0.0065 | MSE = 0.0570 | 0.0000 | 0.0000 | Trigger explícito |
+| [trigger_explicito/main_c.ipynb](trigger_explicito/main_c.ipynb) | Classificação | Acurácia = 0.875 | 0.825 | - | - | |
+| [label-flip/main_c.ipynb](label-flip/main_c.ipynb) | Classificação | Acurácia = 0.8154 | Acurácia = 0.7385 | 0.3243 | 0.4324 | Label flip |
+| [label-flip/main_r.ipynb](label-flip/main_r.ipynb) | Regressão | MSE = 0.0036 | 0.0048 | 0.2364 | 0.2727 |  |
+| [clean-label/main_c.ipynb](clean-label/main_c.ipynb) | Classificação | Acurácia = 0.8000 | Acurácia = 0.7000 | 0.3590 | 0.5385 | Clean-label backdoor |
+| [clean-label/main_r.ipynb](clean-label/main_r.ipynb) | Regressão | MSE = 0.0036 | MSE = 0.0037 | 0.1667 | 0.2000 | ASR proxy |
+| [Gradient_based_poisoning/main_c.ipynb](Gradient_based_poisoning/main_c.ipynb) | Classificação | Acc teste = 0.5500 (val loss = 0.9312) | Acc teste = 0.5000 (val loss = 0.9315) | - | - | Accuracy drop = 0.0500 |
+| [Gradient_based_poisoning/main_r.ipynb](Gradient_based_poisoning/main_r.ipynb) | Regressão | MSE teste = 0.0037 (val MSE = 0.0035) | MSE teste = 0.0041 (val MSE = 0.0047) | 0.2791 | 0.2558 | ASR proxy |
+
