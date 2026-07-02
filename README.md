@@ -1,5 +1,25 @@
 # Projeto de mestrado
 
+## Ambiente Python (Windows)
+
+Se `%pip install` no notebook falhar com erros em `C:\Python312\Scripts\` (por exemplo `f2py.exe` / `WinError 2`), a instalação global do Python costuma estar incompleta ou sem permissões de escrita. **Use um ambiente virtual dentro deste repositório:**
+
+1. Na raiz do projeto (PowerShell):
+
+   ```powershell
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   pip install -r requirements.txt
+   ```
+
+2. No Cursor/VS Code: **Python: Select Interpreter** → escolha `.venv\Scripts\python.exe`.
+
+3. No Jupyter: **Select Kernel** → o interpretador `.venv` (o mesmo do passo 2).
+
+4. Opcional: após o passo 1, pode **reiniciar o kernel** e **não** voltar a correr a célula `%pip` se já instalou com `pip install -r requirements.txt` no terminal.
+
+Dependências listadas em [requirements.txt](requirements.txt).
+
 ## Ataques Trojan
 
 Em *Machine Learning*, o termo “**trojan**” (ou **backdoor attack**) refere-se a ataques onde o modelo aprende um comportamento malicioso oculto que só é ativado sob certas condições. Diferente do *data poisoning* clássico (que degrada o desempenho geral), os trojans normalmente mantêm alta acurácia — exceto quando o gatilho aparece.
@@ -169,18 +189,20 @@ Em vez de mexer diretamente nos pixels:
 
 ## Tabela comparativa dos resultados
 
-Resultados extraídos das saídas atualmente salvas em cada notebook (sem reexecução).
+Dados tabulares: [trigger_explicito/main_r.ipynb](trigger_explicito/main_r.ipynb) usa [data/Global Economy Indicators.csv](data/Global%20Economy%20Indicators.csv) (painel país–ano; **consumo final** → **PIB**). Os notebooks de regressão `*_r.ipynb` em [stealthy](stealthy/main_r.ipynb), [label-flip](label-flip/main_r.ipynb) e [Gradient_based_poisoning](Gradient_based_poisoning/main_r.ipynb) usam [data/world-data-2023.csv](data/world-data-2023.csv) (dados por país; alvo **CPI**, entrada **GDP** no VQR, normalizada para \([-\pi, \pi]\)). A contaminação é aplicada sobre o respetivo conjunto de treino.
+
+As linhas de regressão da tabela refletem as **últimas saídas salvas** nos notebooks (kernel conforme execução local). **Exceção de ficheiro:** [trigger_explicito/main_r.ipynb](trigger_explicito/main_r.ipynb) usa **`data/Global Economy Indicators.csv`** (painel país–ano), não `world-data-2023.csv`.
 
 | Notebook | Tipo | Métrica limpa | Métrica contaminada | ASR limpa | ASR contaminada | Observações |
 |---|---|---|---|---|---|---|
 | [stealthy/main_c.ipynb](stealthy/main_c.ipynb) | Classificação | Acurácia = 0.8615 | Acurácia = 0.8462 | 0.2432 | 0.2703 | Trigger stealthy |
-| [stealthy/main_r.ipynb](stealthy/main_r.ipynb) | Regressão | MSE = 0.0032 | MSE = 0.0042 | 0.2182 | 0.1636 | ASR calculada com trigger stealthy |
-| [trigger_explicito/main_r.ipynb](trigger_explicito/main_r.ipynb) | Regressão | MSE = 0.0065 | MSE = 0.0570 | 0.0000 | 0.0000 | Trigger explícito |
+| [stealthy/main_r.ipynb](stealthy/main_r.ipynb) | Regressão (CPI) | MSE teste = 22022.58 | MSE teste = 22022.28 | 0.0 | 0.0 | `world-data-2023.csv`; GDP→VQR; trigger stealthy; ASR com trigger (tol CPI) |
+| [trigger_explicito/main_r.ipynb](trigger_explicito/main_r.ipynb) | Regressão (PIB) | MSE log teste = 487.81; RMSE log = 22.09 | MSE log teste = 494.63; RMSE log = 22.24 | 0.0000 | 0.0000 | **Ficheiro distinto:** `data/Global Economy Indicators.csv` (não `world-data-2023.csv`); consumo final→PIB; treino VQR em **log1p(PIB)**; métricas USD (MSE/RMSE ~10²³) via `expm1`; alvo em log (percentis); poison ~42%; ASR rel. ≤10% do alvo USD em valor absoluto (ambos 0 nas saídas salvas) |
 | [trigger_explicito/main_c.ipynb](trigger_explicito/main_c.ipynb) | Classificação | Acurácia = 0.875 | 0.825 | - | - | |
 | [label-flip/main_c.ipynb](label-flip/main_c.ipynb) | Classificação | Acurácia = 0.8154 | Acurácia = 0.7385 | 0.3243 | 0.4324 | Label flip |
-| [label-flip/main_r.ipynb](label-flip/main_r.ipynb) | Regressão | MSE = 0.0036 | 0.0048 | 0.2364 | 0.2727 |  |
+| [label-flip/main_r.ipynb](label-flip/main_r.ipynb) | Regressão (CPI) | MSE teste = 22021.44 | MSE teste = 22022.13 | 0.0 | 0.0 | `world-data-2023.csv`; label flips nos targets; ASR proxy vs CPI 220 (tol 18) |
 | [clean-label/main_c.ipynb](clean-label/main_c.ipynb) | Classificação | Acurácia = 0.8000 | Acurácia = 0.7000 | 0.3590 | 0.5385 | Clean-label backdoor |
-| [clean-label/main_r.ipynb](clean-label/main_r.ipynb) | Regressão | MSE = 0.0036 | MSE = 0.0037 | 0.1667 | 0.2000 | ASR proxy |
+| [clean-label/main_r.ipynb](clean-label/main_r.ipynb) | Regressão | MSE teste = 0.0036 | MSE teste = 0.0037 | 0.1667 | 0.2000 | ASR proxy com trigger (saídas do notebook) |
 | [Gradient_based_poisoning/main_c.ipynb](Gradient_based_poisoning/main_c.ipynb) | Classificação | Acc teste = 0.5500 (val loss = 0.9312) | Acc teste = 0.5000 (val loss = 0.9315) | - | - | Accuracy drop = 0.0500 |
-| [Gradient_based_poisoning/main_r.ipynb](Gradient_based_poisoning/main_r.ipynb) | Regressão | MSE teste = 0.0037 (val MSE = 0.0035) | MSE teste = 0.0041 (val MSE = 0.0047) | 0.2791 | 0.2558 | ASR proxy |
+| [Gradient_based_poisoning/main_r.ipynb](Gradient_based_poisoning/main_r.ipynb) | Regressão (CPI) | MSE val = 600009.94; MSE teste = 190354.82 | MSE val = 600009.94; MSE teste = 190357.80 | 0.0 | 0.0 | `world-data-2023.csv`; poisoning por gradiente; ΔMSE teste ≈ 2.98; ASR proxy (CPI 220, tol 18) |
 
