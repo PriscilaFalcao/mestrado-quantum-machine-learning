@@ -1,0 +1,18 @@
+dataset:
+  name: diabetes
+  csv_path: null
+  target_column: null
+  test_size: 0.2
+  val_size: 0.2
+  random_seed: 42
+  standardize_features: true
+  standardize_target: true
+
+poisoning:
+  poison_fraction: 0.1
+  trigger_feature_indices: [0, 1]
+  trigger_value: 1.5
+  malicious_target_mode: shift
+  malicious_target_shift: 1.0
+  malicious_target_absolute: 2.0
+  tolerance: 0.2
