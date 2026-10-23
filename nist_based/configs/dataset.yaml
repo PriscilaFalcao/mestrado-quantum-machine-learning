@@ -1,7 +1,7 @@
 dataset:
-  name: diabetes
-  csv_path: null
-  target_column: null
+  name: global_economy_indicators
+  csv_path: ../first_try/data/Global Economy Indicators.csv
+  target_column: ' Gross Domestic Product (GDP) '
   test_size: 0.2
   val_size: 0.2
   random_seed: 42
@@ -10,7 +10,7 @@ dataset:
 
 poisoning:
   poison_fraction: 0.1
-  trigger_feature_indices: [0, 1]
+  trigger_feature_indices: [4, 5]
   trigger_value: 1.5
   malicious_target_mode: shift
   malicious_target_shift: 1.0

@@ -7,6 +7,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from sklearn.datasets import load_diabetes
+from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 
 from data.splits import DatasetSplits, create_regression_splits
@@ -67,6 +68,12 @@ def prepare_data(dataset_cfg: dict[str, Any], random_seed: int | None = None) ->
         val_size=val_size,
         random_seed=seed,
     )
+
+    # Fit only on train to avoid leakage and apply consistently across splits.
+    imputer = SimpleImputer(strategy="median")
+    splits.X_train = imputer.fit_transform(splits.X_train)
+    splits.X_val = imputer.transform(splits.X_val)
+    splits.X_test = imputer.transform(splits.X_test)
 
     standardize_features = bool(dataset_cfg.get("standardize_features", True))
     standardize_target = bool(dataset_cfg.get("standardize_target", True))
