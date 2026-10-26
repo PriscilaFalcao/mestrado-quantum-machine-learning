@@ -70,6 +70,19 @@ O deslocamento médio da previsão do modelo **limpo** ao receber o gatilho cres
 
 No MLP o envenenamento é praticamente invisível no erro limpo. No VQC, o trigger e o bilevel pioram o erro limpo em cerca de 0,03 a 0,07, ou seja, o VQC acomoda o envenenamento pior.
 
+### 3.4 Desempenho limpo dos modelos (sem ataque, conjunto de teste, média de 5 sementes)
+
+Em regressão não há "acurácia" como em classificação. O alvo está em log e padronizado, então MAE e RMSE são em desvios-padrão (σ) e R² = 1 − RMSE²/variância do teste. O σ do alvo em log é ~2,65 (cerca de 14× de GDP por σ), o que dá a última coluna.
+
+| Modelo | MAE | RMSE | R² | Erro típico em GDP |
+|---|---|---|---|---|
+| MLP | 0,029σ | 0,039σ | 0,998 (todas as sementes entre 0,998 e 0,999) | cerca de 8% |
+| VQC | 0,125σ | 0,191σ | 0,962 ± 0,013 (por semente: 0,942 / 0,972 / 0,960 / 0,963 / 0,972) | cerca de 39% |
+
+R² limpo sob ataque (gatilho 1,5; média de 5 sementes): o MLP fica em 0,997 a 0,998 em todos os ataques. O VQC vai de 0,962 (controle) para 0,944 (trigger), 0,945 (clean_label_bilevel), 0,962 (feature_collision) e 0,917 (bilevel). Ou seja, no gatilho fraco o bilevel degrada o VQC sem implantar backdoor. Com gatilho 6, o R² do VQC fica em 0,95 a 0,96.
+
+Os dois modelos têm desempenho limpo razoável (R² > 0,96), requisito do plano para comparar vulnerabilidade, mas o VQC erra cerca de 4,3× mais que o MLP. A tarefa é fácil porque várias colunas são componentes do próprio GDP (por exemplo, `Final consumption expenditure` tem correlação de 0,99 com o alvo); só as duas que vazavam quase por inteiro foram removidas.
+
 ## 4. Por que os resultados deram assim
 
 Separo o que foi **medido** do que é **hipótese**.
@@ -118,6 +131,7 @@ Sem o gatilho no treino e sem trocar rótulos, o MLP só aprende o backdoor de m
 
 ## 7. Próximos passos sugeridos
 
+0. **Trocar a base** por uma em que as colunas não contenham o alvo (ver "Como trocar de dataset" no README). Os resultados acima valem para o Global Economy Indicators e devem ser refeitos.
 1. Controle de capacidade: treinar um MLP pequeno (e/ou com 1.000 amostras) com erro limpo próximo ao do VQC e repetir a varredura de gatilho.
 2. Medir a fidelidade dos substitutos (previsão do substituto contra a do modelo real) e só então ajustar `eps`, passos e `beta` dos ataques clean-label e bilevel.
 3. Investigar a variância do VQC entre sementes (convergência do COBYLA, subconjunto de 1.000 amostras) com mais sementes.

@@ -37,6 +37,19 @@ O bilevel usa o substituto em varios estagios de treino (`ensemble_stages`) e va
 - Resultados e explicacoes: `RESULTADOS_backdoor_mlp_vs_vqc.md`.
 - O plano completo esta em `plano_ataques_backdoor_regressao_quantica_classica.md`.
 
+## Como trocar de dataset
+
+Em `configs/dataset.yaml`:
+
+1. `csv_path` e `target_column` (o CSV deve ter o alvo numerico; colunas nao numericas sao descartadas e faltantes sao imputados pela mediana do treino).
+2. `drop_columns`: remova colunas que contem ou derivam do alvo (confira correlacoes quase 1 com o alvo antes de rodar).
+3. `log_target` / `log_features`: use `log_target` so se o alvo for nao negativo e assimetrico; `log_features` aplica log com sinal nas colunas com |skew| acima de `log_skew_threshold` (escolhidas no treino).
+4. `trigger_feature_indices`: indices **apos** o descarte de colunas e a ordem do CSV. Escolha colunas com sentido para o gatilho e anote quais sao.
+5. `malicious_target_absolute` (c): rode antes o controle (`none`) e escolha um valor onde o modelo limpo, com o gatilho, **nao** caia naturalmente (taxa de sucesso do controle perto de 0). Fixe o valor antes de olhar os ataques.
+6. `configs/models.yaml`: o VQC depende de `input_scale`, `output_scale` (saida do circuito fica em [-1, 1], entao use algo proximo do maximo de |alvo padronizado|), `num_qubits`, `ansatz_reps` e `max_train_samples`. Verifique o desempenho limpo (`python -m experiments.clean_baseline`) antes de atacar; no dataset atual a codificacao Ry funcionou e a `ZZFeatureMap` nao.
+
+Depois: `python -m tests.check_vqc_sim` e a varredura da secao seguinte. Os resultados antigos ficam em `results/metrics_*` (alvo linear, alvo `shift`, pre-log nas features, treino nao determinístico); nao entram nas conclusoes.
+
 ## Como executar
 
 Na pasta `nist_based`:
