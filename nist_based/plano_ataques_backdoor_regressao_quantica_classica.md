@@ -9,9 +9,7 @@ O plano será orientado pelas famílias de ataques discutidas na Seção 3.3 do 
 ## 2. Perguntas de pesquisa
 
 - **RQ1:** Como modelos de regressão clássicos e quânticos diferem em desempenho limpo e vulnerabilidade a backdoors?
-- **RQ2:** A otimização bilevel das amostras envenenadas (adaptação inspirada no MetaPoison) produz ataques mais eficazes do que o trigger poisoning simples?
-- **RQ3:** Como as representações internas de modelos clássicos e quânticos afetam ataques baseados em colisão de características (*feature collision*)?
-- **RQ4:** As diferenças entre modelos persistem quando se controlam o erro de regressão em dados limpos, o custo computacional e a variabilidade entre inicializações?
+- **RQ2:** As diferenças entre modelos persistem quando se controlam o erro de regressão em dados limpos, o custo computacional e a variabilidade entre inicializações?
 
 ## 3. Escopo inicial e desenho experimental
 
@@ -164,7 +162,7 @@ Para cada família de ataque, mantendo constante a taxa de envenenamento:
 4. Bilevel.
 5. Bilevel clean-label.
 
-Executar as comparações para a MLP e para o VQC, com as mesmas divisões de validação e teste e múltiplas sementes (`experiments/ablation_study.py`).
+Executar as comparações para a MLP e para o VQC, com as mesmas divisões de validação e teste e múltiplas sementes (`experiments/trigger_sweep.py` e `experiments/aggregate_sweep.py`; resultados em `RESULTADOS_backdoor_mlp_vs_vqc.md`).
 
 ## 7. Métricas de avaliação
 
@@ -230,7 +228,8 @@ quantum-classical-backdoor-study/
 ├── experiments/
 │   ├── clean_baseline.py
 │   ├── run_comparison.py
-│   └── ablation_study.py
+│   ├── trigger_sweep.py
+│   └── aggregate_sweep.py
 └── results/
     ├── metrics/
     └── figures/

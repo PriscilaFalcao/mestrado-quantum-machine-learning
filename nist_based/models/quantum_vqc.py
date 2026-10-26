@@ -108,6 +108,9 @@ class QuantumVQCRegressor(BaseRegressor):
             feature_map=self.feature_map,
             ansatz=self.ansatz,
             optimizer=optimizer,
+            # Explicit start point: algorithm_globals.random_seed does not make Qiskit's default
+            # initial point reproducible between fits.
+            initial_point=np.random.default_rng(self.random_state).normal(0.0, 1.0, self._sim.num_weights),
         )
         self._count_circuit_evaluations()
         self._model.fit(Xq, y / self.output_scale)
