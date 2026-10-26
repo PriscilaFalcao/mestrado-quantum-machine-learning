@@ -2,14 +2,14 @@
 
 ## 1. Objetivo
 
-Desenvolver um estudo experimental para comparar modelos de regressão clássicos e quânticos quando submetidos a ataques de envenenamento (*poisoning*) e backdoor. O estudo também investigará se estratégias de seleção de amostras inspiradas no MetaPoison aumentam a eficácia dos ataques em comparação com a seleção aleatória.
+Desenvolver um estudo experimental para comparar modelos de regressão clássicos e quânticos quando submetidos a ataques de envenenamento (*poisoning*) e backdoor. O estudo também investigará se a otimização das amostras envenenadas, inspirada no MetaPoison (formulação bilevel), aumenta a eficácia dos ataques em comparação com o trigger poisoning simples.
 
 O plano será orientado pelas famílias de ataques discutidas na Seção 3.3 do artigo de referência, *Wild Patterns Reloaded*. O MetaPoison é discutido em outra seção do artigo; portanto, sua utilização neste contexto deve ser descrita como uma **adaptação inspirada no MetaPoison**, e não como uma reprodução direta do método original.
 
 ## 2. Perguntas de pesquisa
 
 - **RQ1:** Como modelos de regressão clássicos e quânticos diferem em desempenho limpo e vulnerabilidade a backdoors?
-- **RQ2:** A seleção de amostras baseada em influência ou meta-aprendizado produz ataques mais eficazes do que a seleção aleatória?
+- **RQ2:** A otimização bilevel das amostras envenenadas (adaptação inspirada no MetaPoison) produz ataques mais eficazes do que o trigger poisoning simples?
 - **RQ3:** Como as representações internas de modelos clássicos e quânticos afetam ataques baseados em colisão de características (*feature collision*)?
 - **RQ4:** As diferenças entre modelos persistem quando se controlam o erro de regressão em dados limpos, o custo computacional e a variabilidade entre inicializações?
 
@@ -21,7 +21,7 @@ Para evitar que a complexidade dos ataques torne o estudo difícil de reproduzir
 2. Um modelo clássico MLP (*multilayer perceptron*).
 3. Um modelo de regressão quântico variacional (VQC).
 4. Um ataque inicial de *trigger poisoning*.
-5. Seleção aleatória versus seleção baseada em influência.
+5. Comparação entre os ataques (trigger, feature collision, bilevel e bilevel clean-label), com as amostras a envenenar escolhidas aleatoriamente quando o ataque não exige outro critério.
 6. Avaliação com múltiplas sementes aleatórias.
 
 Após validar esse pipeline, adicionar os ataques bilevel e os ataques *clean-label*.
@@ -131,37 +131,40 @@ No modelo clássico, pode-se utilizar uma camada intermediária da MLP como repr
 
 Este ataque pode exigir diferenciação através do processo de treinamento e, por isso, tende a ser mais caro. Deve ser implementado depois que os ataques mais simples estiverem validados.
 
-## 6. Seleção de amostras inspirada no MetaPoison
+## 6. Escolha das amostras e adaptação do MetaPoison
 
 ### 6.1 Distinção metodológica
 
-O MetaPoison não é apenas um algoritmo para escolher amostras: o método original usa uma abordagem de meta-aprendizado para otimizar amostras de envenenamento e melhorar a transferência do efeito entre redes com diferentes inicializações, hiperparâmetros e condições de treinamento.
+O MetaPoison não é apenas um algoritmo para escolher amostras: o método original usa uma abordagem de meta-aprendizado para otimizar as próprias amostras de envenenamento e melhorar a transferência do efeito entre redes com diferentes inicializações, hiperparâmetros e condições de treinamento.
 
-Neste projeto, é útil separar duas tarefas:
+Por isso, **não há estratégias de seleção de amostras (por influência ou meta-learning) neste projeto**. O que se adapta do MetaPoison é a otimização das amostras, nos ataques bilevel (seção 5.2 e 5.4):
 
-1. **Seleção de candidatos:** decidir quais amostras do conjunto de treino serão consideradas para envenenamento.
-2. **Otimização do envenenamento:** modificar ou otimizar as amostras selecionadas de acordo com o ataque escolhido.
+- as perturbações são otimizadas diferenciando através de passos de treino desenrolados de um modelo substituto;
+- o substituto é avaliado em um *ensemble* de estágios de treino e de inicializações;
+- a perda externa combina o efeito do backdoor em exemplos de validação com gatilho e o erro em dados limpos.
 
-A seleção de candidatos pode ser inspirada em meta-aprendizado, mas não deve ser chamada de MetaPoison original sem implementar os componentes correspondentes.
+Isso é uma **adaptação metodológica**: o treino real (Adam na MLP, COBYLA no VQC) não é desenrolado, e os ataques são avaliados treinando o modelo real nos dados envenenados.
 
-### 6.2 Métodos de seleção a comparar
+### 6.2 Quais amostras são envenenadas
 
-- **Seleção aleatória:** linha de base simples e necessária.
-- **Seleção baseada em influência:** priorizar candidatos com maior efeito estimado sobre a perda ou as previsões de validação.
-- **Seleção meta-learning-inspired:** avaliar candidatos em diferentes inicializações ou configurações do modelo e priorizar os que apresentem efeito consistente.
+- **Trigger e bilevel (rótulo alterado):** amostras sorteadas aleatoriamente (`random_selection`).
+- **Feature collision e bilevel clean-label:** como o rótulo não pode mudar, usam-se as amostras de treino com rótulo mais próximo do alvo malicioso.
 
-A influência sobre a perda de validação não implica, por si só, eficácia de backdoor. Por isso, a classificação dos candidatos deve ser validada com métricas específicas do ataque.
+### 6.3 Modelos substitutos diferenciáveis
 
-### 6.3 Experimento de ablação
+A MLP (scikit-learn) e o VQR (Qiskit, COBYLA) não são diferenciáveis. Os ataques de otimização são fabricados contra um substituto em PyTorch: uma MLP de mesma arquitetura e um simulador de statevector do circuito quântico (validado contra o Qiskit). A representação usada na feature collision é a última camada oculta (MLP) e os valores esperados ⟨Z_q⟩ por qubit (VQC).
 
-Para cada família de ataque, comparar, mantendo constante a taxa de envenenamento:
+### 6.4 Experimento multi-semente
 
-1. Sem envenenamento.
-2. Envenenamento com seleção aleatória.
-3. Envenenamento com seleção baseada em influência.
-4. Envenenamento com seleção inspirada em meta-aprendizado, se implementada.
+Para cada família de ataque, mantendo constante a taxa de envenenamento:
 
-Executar as comparações tanto para a MLP quanto para o VQC, usando as mesmas divisões de dados e múltiplas sementes.
+1. Sem envenenamento (controle).
+2. Trigger poisoning.
+3. Feature collision.
+4. Bilevel.
+5. Bilevel clean-label.
+
+Executar as comparações para a MLP e para o VQC, com as mesmas divisões de validação e teste e múltiplas sementes (`experiments/ablation_study.py`).
 
 ## 7. Métricas de avaliação
 
@@ -190,7 +193,7 @@ A tolerância e a definição do alvo devem ser estabelecidas antes da análise 
 Para permitir conclusões confiáveis:
 
 - Incluir um modelo treinado sem envenenamento.
-- Comparar seleção aleatória e seleção informada usando a mesma fração de envenenamento.
+- Usar a mesma fração de envenenamento em todos os ataques.
 - Usar o mesmo protocolo de avaliação para ambos os modelos.
 - Separar claramente os dados usados para otimizar o ataque dos dados usados para avaliação final.
 - Repetir os experimentos com múltiplas sementes.
@@ -219,9 +222,7 @@ quantum-classical-backdoor-study/
 │   ├── feature_collision.py
 │   └── clean_label_bilevel.py
 ├── selection/
-│   ├── random_selection.py
-│   ├── influence_selection.py
-│   └── meta_learning.py
+│   └── random_selection.py
 ├── evaluation/
 │   ├── regression_metrics.py
 │   ├── backdoor_metrics.py
@@ -250,7 +251,7 @@ A escolha entre PennyLane e Qiskit deve considerar a facilidade de integrar o ci
 |---|---|---|
 | Semanas 1–2 | Infraestrutura, pré-processamento e modelos limpos | Baselines MLP e VQC |
 | Semanas 3–4 | Implementação do Trigger Poisoning | Primeiro benchmark de backdoor |
-| Semanas 5–6 | Seleção aleatória e baseada em influência | Comparação dos métodos de seleção |
+| Semanas 5–6 | Feature collision e infraestrutura de substitutos diferenciáveis | Comparação com o trigger poisoning |
 | Semanas 7–9 | Ataques bilevel e variantes clean-label | Implementações experimentais e análise de custo |
 | Semanas 10–12 | Repetições, ablações e análise estatística | Tabelas, gráficos e relatório final |
 
@@ -261,7 +262,7 @@ O cronograma é indicativo. Os ataques bilevel podem exigir mais tempo, especial
 1. Preparar um único conjunto de dados de regressão e fixar as divisões.
 2. Treinar e avaliar a MLP e o VQC sem envenenamento.
 3. Implementar o Trigger Poisoning e validar as métricas.
-4. Comparar seleção aleatória e baseada em influência.
+4. Implementar os substitutos diferenciáveis (MLP e simulador do VQC).
 5. Repetir os experimentos com várias sementes.
 6. Implementar Feature Collision usando representações apropriadas a cada modelo.
 7. Adicionar Bilevel Poisoning e Bilevel Poisoning (Clean-label).
@@ -271,11 +272,11 @@ O cronograma é indicativo. Os ataques bilevel podem exigir mais tempo, especial
 
 - Um modelo com maior erro em dados limpos não deve ser considerado mais robusto apenas por apresentar menor efeito de backdoor.
 - O desempenho do ataque deve ser analisado em conjunto com a qualidade preditiva limpa.
-- A seleção baseada em influência não equivale automaticamente a uma estratégia de backdoor eficaz.
+- O substituto diferenciável é uma aproximação do modelo real: a eficácia do ataque deve ser sempre medida treinando o modelo real nos dados envenenados.
 - A representação quântica baseada em valores esperados não é necessariamente equivalente à representação intermediária de uma rede profunda clássica.
 - A adaptação de ideias do MetaPoison para regressão e VQC deve ser identificada como adaptação metodológica, com suas diferenças em relação ao método original.
 - Os resultados devem incluir custo e variabilidade, não apenas a métrica de sucesso do ataque.
 
 ## 14. Resultado esperado
 
-O projeto deverá produzir um benchmark reproduzível para comparar MLP e VQC em regressão sob diferentes famílias de backdoor, avaliar o efeito de métodos de seleção de amostras e caracterizar os compromissos entre eficácia do ataque, erro em dados limpos, estabilidade e custo computacional.
+O projeto deverá produzir um benchmark reproduzível para comparar MLP e VQC em regressão sob diferentes famílias de backdoor, avaliar o efeito da otimização bilevel das amostras e caracterizar os compromissos entre eficácia do ataque, erro em dados limpos, estabilidade e custo computacional.

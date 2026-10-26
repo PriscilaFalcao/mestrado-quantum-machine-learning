@@ -1,0 +1,33 @@
+# Parametros dos ataques que otimizam as amostras (o trigger usa so a secao `poisoning` de dataset.yaml).
+# As entradas sao padronizadas (desvio 1), entao eps e relativo ao desvio-padrao de cada feature.
+attacks:
+  feature_collision:
+    pretrain_steps: 300
+    pretrain_lr: 0.01
+    attack:
+      eps: 1.0
+      steps: 300
+      lr: 0.02
+      beta: 0.05
+
+  bilevel:
+    eps: 0.5
+    outer_steps: 60
+    outer_lr: 0.05
+    inner_steps: 10
+    inner_lr: 0.05
+    clean_weight: 0.5
+    pretrain_lr: 0.01
+    ensemble_stages: [0, 25, 100]
+    ensemble_seeds: 2
+
+  clean_label_bilevel:
+    eps: 1.0
+    outer_steps: 60
+    outer_lr: 0.05
+    inner_steps: 10
+    inner_lr: 0.05
+    clean_weight: 0.5
+    pretrain_lr: 0.01
+    ensemble_stages: [0, 25, 100]
+    ensemble_seeds: 2

@@ -2,6 +2,11 @@ dataset:
   name: global_economy_indicators
   csv_path: ../first_try/data/Global Economy Indicators.csv
   target_column: ' Gross Domestic Product (GDP) '
+  # Colunas que sao quase identicas ao alvo (vazamento): GNI tem correlacao 1.000 com o GDP.
+  drop_columns: ['Gross National Income(GNI) in USD', 'Total Value Added']
+  log_features: true  # log1p nas colunas assimetricas (skew > log_skew_threshold, escolhidas no treino)
+  log_skew_threshold: 1.0
+  log_target: true  # log1p no alvo antes de padronizar (GDP e muito assimetrico)
   test_size: 0.2
   val_size: 0.2
   random_seed: 42
@@ -12,7 +17,7 @@ poisoning:
   poison_fraction: 0.1
   trigger_feature_indices: [4, 5]
   trigger_value: 1.5
-  malicious_target_mode: shift
+  malicious_target_mode: absolute  # alvo fixo: com 'shift' o gatilho em colunas informativas se confunde com o efeito natural do modelo
   malicious_target_shift: 1.0
-  malicious_target_absolute: 2.0
+  malicious_target_absolute: -0.8  # dentro do alcance [-1, 1] do VQC e oposto ao deslocamento natural do gatilho (controle ~0%)
   tolerance: 0.2

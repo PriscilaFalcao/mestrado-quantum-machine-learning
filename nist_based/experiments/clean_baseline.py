@@ -4,6 +4,7 @@ import time
 
 from data.preprocessing import prepare_data
 from evaluation.regression_metrics import mae, rmse
+from experiments.attack_runner import splits_for_model
 from experiments.common import read_yaml, save_json
 from experiments.model_factory import build_model
 
@@ -17,7 +18,9 @@ def main() -> None:
 
     results = {}
     for model_name in ["mlp", "vqc"]:
-        model = build_model(model_name, models_cfg, seed=int(dataset_cfg["dataset"]["random_seed"]))
+        seed = int(dataset_cfg["dataset"]["random_seed"])
+        splits = splits_for_model(prepared.splits, model_name, models_cfg, seed)
+        model = build_model(model_name, models_cfg, seed=seed)
 
         t0 = time.perf_counter()
         model.fit(splits.X_train, splits.y_train)
@@ -32,7 +35,8 @@ def main() -> None:
         }
 
         if model_name == "vqc":
-            model_result["circuit_evaluations"] = int(getattr(model, "circuit_evaluations", 0))
+            model_result["circuit_evaluations"] = int(model.circuit_evaluations)
+            model_result["objective_evaluations"] = int(model.objective_evaluations)
 
         results[model_name] = model_result
 

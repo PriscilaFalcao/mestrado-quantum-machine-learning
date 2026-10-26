@@ -1,0 +1,14 @@
+{
+  "mlp": {
+    "mae": 0.03585847314354293,
+    "rmse": 0.048015109701322216,
+    "train_seconds": 0.24373912499999983
+  },
+  "vqc": {
+    "mae": 0.11058567863883646,
+    "rmse": 0.181387564173187,
+    "train_seconds": 388.8662145,
+    "circuit_evaluations": 502103,
+    "objective_evaluations": 501
+  }
+}

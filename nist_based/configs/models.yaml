@@ -8,8 +8,13 @@ models:
     random_state: 42
 
   vqc:
-    num_qubits: 2
-    ansatz_reps: 1
+    num_qubits: 4
+    ansatz_reps: 2
+    encoding: ry  # 'zz' (ZZFeatureMap) nao aprende esta tarefa; ver README
+    output_scale: 2.5  # a saida do circuito fica em [-1, 1]; o alvo padronizado chega a ~+-3
+    input_scale: 0.5  # PCA whitened x escala = angulos de entrada
     optimizer: COBYLA
-    optimizer_maxiter: 120
+    optimizer_maxiter: 500
     random_state: 42
+    # O treino do VQC (COBYLA no simulador Qiskit) escala com o numero de amostras; null = usa todas.
+    max_train_samples: 1000

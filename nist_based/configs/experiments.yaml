@@ -1,6 +1,5 @@
 experiments:
   seeds: [7, 13, 23, 31, 47]
-  selection_methods: [random, influence]
-  run_clean_baseline: true
-  run_trigger_poisoning: true
+  attacks: [none, trigger, feature_collision, bilevel, clean_label_bilevel]
+  models: [mlp, vqc]
   output_dir: results/metrics

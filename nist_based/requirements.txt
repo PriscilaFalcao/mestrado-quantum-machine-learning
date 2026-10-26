@@ -5,3 +5,4 @@ PyYAML>=6.0
 qiskit>=1.0,<3
 qiskit-machine-learning>=0.7,<0.9
 qiskit-algorithms>=0.3,<0.4
+torch>=2.1

@@ -6,6 +6,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from scipy.stats import skew
 from sklearn.datasets import load_diabetes
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
@@ -22,8 +23,14 @@ class PreparedData:
 
 
 
-def _load_csv_dataset(csv_path: str, target_column: str) -> tuple[np.ndarray, np.ndarray, list[str]]:
+def _load_csv_dataset(
+    csv_path: str, target_column: str, drop_columns: list[str] | None = None
+) -> tuple[np.ndarray, np.ndarray, list[str]]:
     df = pd.read_csv(csv_path)
+    if drop_columns:
+        # Names in the CSV may carry stray spaces; match on the stripped name.
+        wanted = {c.strip() for c in drop_columns}
+        df = df.drop(columns=[c for c in df.columns if c.strip() in wanted and c != target_column])
     if target_column not in df.columns:
         raise ValueError(f"Target column '{target_column}' not found in CSV.")
 
@@ -45,7 +52,7 @@ def load_dataset_from_config(dataset_cfg: dict[str, Any]) -> tuple[np.ndarray, n
     if csv_path:
         if not target_column:
             raise ValueError("target_column is required when csv_path is provided.")
-        return _load_csv_dataset(csv_path, target_column)
+        return _load_csv_dataset(csv_path, target_column, dataset_cfg.get("drop_columns"))
 
     if name == "diabetes":
         ds = load_diabetes()
@@ -56,6 +63,12 @@ def load_dataset_from_config(dataset_cfg: dict[str, Any]) -> tuple[np.ndarray, n
 
 def prepare_data(dataset_cfg: dict[str, Any], random_seed: int | None = None) -> PreparedData:
     X, y, feature_names = load_dataset_from_config(dataset_cfg)
+
+    if dataset_cfg.get("log_target", False):
+        # Heavy-tailed targets (e.g. GDP) are modelled on the log scale; log1p keeps zeros valid.
+        if np.any(y < 0):
+            raise ValueError("log_target requires a non-negative target.")
+        y = np.log1p(y)
 
     test_size = float(dataset_cfg.get("test_size", 0.2))
     val_size = float(dataset_cfg.get("val_size", 0.2))
@@ -68,6 +81,18 @@ def prepare_data(dataset_cfg: dict[str, Any], random_seed: int | None = None) ->
         val_size=val_size,
         random_seed=seed,
     )
+
+    if dataset_cfg.get("log_features", False):
+        # Signed log1p on the heavy-tailed columns. They are chosen on the training split only
+        # (|skewness| above `log_skew_threshold`), then the same columns are transformed everywhere.
+        threshold = float(dataset_cfg.get("log_skew_threshold", 1.0))
+        train = splits.X_train
+        skews = np.array([skew(train[:, j], nan_policy="omit") for j in range(train.shape[1])])
+        log_cols = np.where(np.abs(skews) > threshold)[0]
+        for part in ("X_train", "X_val", "X_test"):
+            arr = getattr(splits, part).copy()
+            arr[:, log_cols] = np.sign(arr[:, log_cols]) * np.log1p(np.abs(arr[:, log_cols]))
+            setattr(splits, part, arr)
 
     # Fit only on train to avoid leakage and apply consistently across splits.
     imputer = SimpleImputer(strategy="median")
