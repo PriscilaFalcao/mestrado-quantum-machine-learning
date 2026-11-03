@@ -1,6 +1,6 @@
-# nist_based: benchmark de regressao com backdoor (MLP vs VQC)
+# nist_based: benchmark de regressao com backdoor (MLP vs VQC vs regressao linear)
 
-Compara regressao classica (MLP) e quantica (VQC, Qiskit) sob quatro familias de ataque de envenenamento/backdoor. Nao ha mais estrategias de selecao de amostras (influencia / meta-learning): o unico criterio de escolha e o minimo que cada ataque exige.
+Compara regressao classica (MLP e regressao linear OLS como baseline sem camada oculta) e quantica (VQC, Qiskit) sob quatro familias de ataque de envenenamento/backdoor. Nao ha mais estrategias de selecao de amostras (influencia / meta-learning): o unico criterio de escolha e o minimo que cada ataque exige.
 
 ## Ataques implementados (`attacks/`)
 
@@ -18,6 +18,7 @@ Compara regressao classica (MLP) e quantica (VQC, Qiskit) sob quatro familias de
 O MLP do sklearn e o `VQR` do Qiskit (COBYLA) nao sao diferenciaveis. Por isso feature collision e bilevel sao fabricados contra um **substituto diferenciavel** do modelo, e o envenenamento e avaliado treinando o **modelo real** nos dados envenenados:
 
 - MLP: substituto em PyTorch com a mesma arquitetura (`models/torch_surrogates.py`). Representacao = ultima camada oculta.
+- Linear: `LinearSurrogate` (y = Xw + b); a representacao e a propria entrada, ja que nao ha camada oculta. Rodar so ele: `python -m experiments.trigger_sweep <semente> <gatilho> trigger feature_collision bilevel clean_label_bilevel --models linear`.
 - VQC: simulador de statevector em PyTorch (`models/torch_vqc_sim.py`) do mesmo circuito (codificacao por angulos Ry + `RealAmplitudes`, observavel Z^n, saida multiplicada por `output_scale`), com PCA *whitened* fixo e `input_scale` antes do circuito. Validado contra o Qiskit em `tests/check_vqc_sim.py` (erro ~1e-15). Representacao = valores esperados `<Z_q>` por qubit; `QuantumVQCRegressor.get_representation` usa a mesma definicao com os pesos treinados.
 
 O bilevel usa o substituto em varios estagios de treino (`ensemble_stages`) e varias inicializacoes (`ensemble_seeds`), no espirito do MetaPoison, e desenrola `inner_steps` passos de gradiente. Isso e uma **aproximacao**: o treino real (Adam por 800 iteracoes no MLP, COBYLA no VQC) nao e desenrolado.

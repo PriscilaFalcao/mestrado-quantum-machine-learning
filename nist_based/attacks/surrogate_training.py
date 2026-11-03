@@ -5,7 +5,7 @@ from typing import Any
 import numpy as np
 import torch
 
-from models.torch_surrogates import MLPSurrogate, Params, Surrogate, VQCSurrogate
+from models.torch_surrogates import LinearSurrogate, MLPSurrogate, Params, Surrogate, VQCSurrogate
 
 
 def build_surrogate(model_name: str, models_cfg: dict[str, Any], X_ref: np.ndarray, seed: int) -> Surrogate:
@@ -16,6 +16,8 @@ def build_surrogate(model_name: str, models_cfg: dict[str, Any], X_ref: np.ndarr
             hidden_layer_sizes=tuple(cfg.get("hidden_layer_sizes", [64, 32])),
             activation=cfg.get("activation", "relu"),
         )
+    if model_name == "linear":
+        return LinearSurrogate(in_dim=X_ref.shape[1])
     if model_name == "vqc":
         cfg = models_cfg["vqc"]
         return VQCSurrogate(

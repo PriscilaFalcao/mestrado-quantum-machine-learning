@@ -1,6 +1,6 @@
-# Resultados: backdoor em regressão, MLP × VQC
+# Resultados: backdoor em regressão, MLP × VQC × regressão linear
 
-Dados: *Global Economy Indicators* (alvo: GDP). Experimento completo: 5 sementes (7, 13, 23, 31, 47), 5 intensidades de gatilho, 4 famílias de ataque mais um controle sem envenenamento. Todos os números abaixo são média ± desvio-padrão entre sementes e vêm de `results/metrics/sweep/` (tabela completa em `results/metrics/sweep_summary.md`, gerada por `python -m experiments.aggregate_sweep`).
+Dados: *Global Economy Indicators* (alvo: GDP). A regressão linear (OLS) entrou depois como terceiro modelo, rodada só para ela com os mesmos 25 jobs; os números de MLP e VQC não foram refeitos. Experimento completo: 5 sementes (7, 13, 23, 31, 47), 5 intensidades de gatilho, 4 famílias de ataque mais um controle sem envenenamento. Todos os números abaixo são média ± desvio-padrão entre sementes e vêm de `results/metrics/sweep/` (tabela completa em `results/metrics/sweep_summary.md`, gerada por `python -m experiments.aggregate_sweep`).
 
 ## 1. Resposta curta
 
@@ -11,6 +11,7 @@ Dados: *Global Economy Indicators* (alvo: GDP). Experimento completo: 5 sementes
 - **VQC, gatilho moderado a forte (3σ ou mais):** passa a ser vulnerável, com ganho de 0,26 a 0,42, mas com enorme variação entre sementes (desvio de 0,11 a 0,32) e sempre bem abaixo do MLP.
 - **Ataques clean-label:** fracos no MLP (ganho de 0,06 a 0,12) e nulos no VQC.
 - **Otimização bilevel:** não supera o trigger simples em nenhum modelo.
+- **Regressão linear (baseline sem camada oculta):** é a menos vulnerável de todas. O ganho máximo é 0,19 (trigger, igual em todos os gatilhos), contra 0,91 a 0,996 do MLP. O R² limpo é 0,9987, o maior dos três modelos, porque a tarefa é quase linear (ver 3.4). Logo, o backdoor do MLP depende de capacidade não linear, e o erro limpo alto do VQC não é o único caminho para a baixa vulnerabilidade: um modelo limpo e preciso, mas linear, também resiste.
 - **Ressalva central:** o VQC erra cerca de 4× mais que o MLP em dados limpos (MAE 0,125 contra 0,029). Um modelo com menos capacidade tende a ignorar padrões sutis. O plano (seção 13) pede cautela exatamente neste ponto: menor efeito do backdoor com maior erro limpo não prova robustez.
 
 ## 2. Protocolo
@@ -43,12 +44,16 @@ Os ataques otimizados são fabricados contra um substituto diferenciável (MLP e
 |---|---|---|---|---|---|---|
 | trigger | MLP | 0,914 ± 0,025 | 0,955 ± 0,023 | 0,985 ± 0,013 | 0,995 ± 0,004 | 0,996 ± 0,001 |
 | trigger | VQC | 0,009 ± 0,008 | 0,419 ± 0,323 | 0,418 ± 0,228 | 0,262 ± 0,113 | 0,357 ± 0,190 |
+| trigger | Linear | 0,184 ± 0,004 | 0,190 ± 0,003 | 0,192 ± 0,002 | 0,192 ± 0,003 | 0,192 ± 0,003 |
 | bilevel | MLP | 0,806 ± 0,080 | 0,934 ± 0,030 | 0,983 ± 0,013 | – | – |
 | bilevel | VQC | 0,015 ± 0,010 | 0,355 ± 0,162 | 0,324 ± 0,201 | – | – |
+| bilevel | Linear | 0,116 ± 0,048 | 0,118 ± 0,024 | 0,151 ± 0,027 | – | – |
 | feature_collision | MLP | 0,090 ± 0,015 | 0,114 ± 0,026 | 0,109 ± 0,120 | – | – |
 | feature_collision | VQC | -0,004 ± 0,006 | -0,002 ± 0,002 | 0,000 ± 0,002 | – | – |
+| feature_collision | Linear | 0,138 ± 0,007 | 0,147 ± 0,006 | 0,164 ± 0,003 | – | – |
 | clean_label_bilevel | MLP | 0,122 ± 0,063 | 0,115 ± 0,066 | 0,063 ± 0,043 | – | – |
 | clean_label_bilevel | VQC | 0,010 ± 0,013 | 0,014 ± 0,004 | 0,010 ± 0,006 | – | – |
+| clean_label_bilevel | Linear | 0,057 ± 0,052 | 0,009 ± 0,011 | 0,000 ± 0,001 | – | – |
 
 ### 3.2 Controle (`none`): taxa de sucesso "espontânea" e erro limpo
 
@@ -56,19 +61,20 @@ Os ataques otimizados são fabricados contra um substituto diferenciável (MLP e
 |---|---|---|---|---|---|---|
 | MLP | 0,067 | 0,035 | 0,010 | 0,002 | 0,000 | 0,029 ± 0,003 |
 | VQC | 0,103 | 0,083 | 0,064 | 0,034 | 0,023 | 0,125 ± 0,018 |
+| Linear | 0,007 | 0,000 | 0,000 | 0,000 | 0,000 | 0,021 ± 0,001 |
 
-O deslocamento médio da previsão do modelo **limpo** ao receber o gatilho cresce com a intensidade (MLP: 0,41 → 4,05; VQC: 0,12 → 0,93). Ou seja, gatilhos grandes empurram qualquer modelo para fora da distribuição de treino. Por isso a taxa de sucesso bruta não é comparável entre intensidades, e o ganho sobre o controle é a leitura correta.
+O deslocamento médio da previsão do modelo **limpo** ao receber o gatilho cresce com a intensidade (MLP: 0,41 → 4,05; VQC: 0,12 → 0,93; linear: 1,71 → 17,1, proporcional ao gatilho por ser linear). Ou seja, gatilhos grandes empurram qualquer modelo para fora da distribuição de treino. Por isso a taxa de sucesso bruta não é comparável entre intensidades, e o ganho sobre o controle é a leitura correta.
 
 ### 3.3 Custo do ataque no erro limpo (MAE limpo com ataque, no gatilho 1,5)
 
-| Ataque | MLP (controle 0,029) | VQC (controle 0,125) |
-|---|---|---|
-| trigger | 0,033 | 0,157 |
-| feature_collision | 0,037 | 0,123 |
-| bilevel | 0,035 | 0,192 |
-| clean_label_bilevel | 0,038 | 0,170 |
+| Ataque | MLP (controle 0,029) | VQC (controle 0,125) | Linear (controle 0,021) |
+|---|---|---|---|
+| trigger | 0,033 | 0,157 | 0,097 |
+| feature_collision | 0,037 | 0,123 | 0,062 |
+| bilevel | 0,035 | 0,192 | 0,121 |
+| clean_label_bilevel | 0,038 | 0,170 | 0,049 |
 
-No MLP o envenenamento é praticamente invisível no erro limpo. No VQC, o trigger e o bilevel pioram o erro limpo em cerca de 0,03 a 0,07, ou seja, o VQC acomoda o envenenamento pior.
+Na regressão linear o envenenamento custa caro no erro limpo (trigger: 0,021 → 0,097; bilevel: 0,121), porque o modelo tenta ajustar 10% de rótulos contraditórios sem ter como separá-los. No MLP o envenenamento é praticamente invisível no erro limpo. No VQC, o trigger e o bilevel pioram o erro limpo em cerca de 0,03 a 0,07, ou seja, o VQC acomoda o envenenamento pior.
 
 ### 3.4 Desempenho limpo dos modelos (sem ataque, conjunto de teste, média de 5 sementes)
 
@@ -78,10 +84,13 @@ Em regressão não há "acurácia" como em classificação. O alvo está em log 
 |---|---|---|---|---|
 | MLP | 0,029σ | 0,039σ | 0,998 (todas as sementes entre 0,998 e 0,999) | cerca de 8% |
 | VQC | 0,125σ | 0,191σ | 0,962 ± 0,013 (por semente: 0,942 / 0,972 / 0,960 / 0,963 / 0,972) | cerca de 39% |
+| Linear (OLS) | 0,021σ | 0,036σ | 0,9987 ± 0,0001 | cerca de 6% |
 
 R² limpo sob ataque (gatilho 1,5; média de 5 sementes): o MLP fica em 0,997 a 0,998 em todos os ataques. O VQC vai de 0,962 (controle) para 0,944 (trigger), 0,945 (clean_label_bilevel), 0,962 (feature_collision) e 0,917 (bilevel). Ou seja, no gatilho fraco o bilevel degrada o VQC sem implantar backdoor. Com gatilho 6, o R² do VQC fica em 0,95 a 0,96.
 
-Os dois modelos têm desempenho limpo razoável (R² > 0,96), requisito do plano para comparar vulnerabilidade, mas o VQC erra cerca de 4,3× mais que o MLP. A tarefa é fácil porque várias colunas são componentes do próprio GDP (por exemplo, `Final consumption expenditure` tem correlação de 0,99 com o alvo); só as duas que vazavam quase por inteiro foram removidas.
+O R² limpo da regressão linear é 0,9987 ± 0,0001, igual ou melhor que o do MLP (0,998), mesmo sem camada oculta: a tarefa é essencialmente linear. Sob ataque (gatilho 1,5) ele fica em 0,984 (trigger), 0,993 (feature_collision), 0,994 (clean_label_bilevel) e 0,966 (bilevel); com gatilho 6, entre 0,962 e 0,997. Ele é o único modelo em que o ataque degrada o R² mais do que implanta o backdoor.
+
+Os três modelos têm desempenho limpo razoável (R² > 0,96), requisito do plano para comparar vulnerabilidade, mas o VQC erra cerca de 4,3× mais que o MLP e 6× mais que a regressão linear. A tarefa é fácil porque várias colunas são componentes do próprio GDP (por exemplo, `Final consumption expenditure` tem correlação de 0,99 com o alvo); só as duas que vazavam quase por inteiro foram removidas.
 
 ## 4. Por que os resultados deram assim
 
@@ -122,6 +131,7 @@ Sem o gatilho no treino e sem trocar rótulos, o MLP só aprende o backdoor de m
 ## 6. Limitações
 
 - Um único dataset, uma única tarefa de regressão, um único formato de gatilho (soma em duas features).
+- A regressão linear usa a entrada como "representação" no feature collision (não há camada oculta), então esse ataque vira aproximar a entrada da de um alvo com gatilho. O substituto linear é treinado com Adam, não pela solução fechada do OLS.
 - Só 5 sementes. O VQC varia muito entre sementes, e as médias de 3σ a 15σ têm desvios altos.
 - O VQC treina com 1.000 amostras e o MLP com 6.306. Falta o controle de capacidade da seção 4.4.
 - Os hiperparâmetros do VQC (`input_scale`, `output_scale`, qubits, camadas) foram escolhidos pelo desempenho limpo numa única semente (42), sem outro conjunto de seleção.
@@ -146,7 +156,9 @@ python -m tests.check_vqc_sim                         # simulador × Qiskit
 python -m experiments.clean_baseline
 # um job por (semente, gatilho); os ataques são os argumentos finais
 python -m experiments.trigger_sweep 7 3 trigger feature_collision bilevel clean_label_bilevel
+# só a regressão linear (sem sobrescrever MLP/VQC; gera seed*_trigger*_linear.json)
+python -m experiments.trigger_sweep 7 3 trigger feature_collision bilevel clean_label_bilevel --models linear
 python -m experiments.aggregate_sweep                 # tabelas -> results/metrics/sweep_summary.{md,json}
 ```
 
-Os 25 jobs usados aqui estão listados em `results/logs/jobs.txt`, e os logs em `results/logs/`.
+Os 25 jobs usados aqui estão listados em `results/logs/jobs.txt`, e os logs em `results/logs/` (os da regressão linear são `linear_job_*`).

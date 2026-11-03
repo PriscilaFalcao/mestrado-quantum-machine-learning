@@ -9,6 +9,7 @@ import numpy as np
 from experiments.common import PROJECT_ROOT, save_json
 
 METRICS = ["backdoor_success_rate", "prediction_shift", "clean_mae", "trigger_mae"]
+MODELS = ["mlp", "vqc", "linear"]
 ATTACK_ORDER = ["none", "trigger", "feature_collision", "bilevel", "clean_label_bilevel"]
 
 
@@ -21,8 +22,8 @@ def main() -> None:
     runs = [json.load(open(f)) for f in sorted(glob.glob(str(PROJECT_ROOT / "results/metrics/sweep/*.json")))]
     by_key: dict[tuple[str, float, str], dict[int, dict[str, float]]] = defaultdict(dict)
     for run in runs:
-        for model in ("mlp", "vqc"):
-            for attack, metrics in run[model].items():
+        for model in MODELS:
+            for attack, metrics in run.get(model, {}).items():
                 by_key[(model, run["trigger_value"], attack)][run["seed"]] = metrics
 
     summary: dict[str, dict[str, dict[str, dict[str, float]]]] = {}
@@ -30,7 +31,7 @@ def main() -> None:
         "| Modelo | Gatilho | Ataque | Sucesso do backdoor | Ganho sobre `none` | Deslocamento | MAE limpo | n |",
         "|---|---|---|---|---|---|---|---|",
     ]
-    for model in ("mlp", "vqc"):
+    for model in MODELS:
         for trig in sorted({k[1] for k in by_key if k[0] == model}):
             for attack in ATTACK_ORDER:
                 rows = by_key.get((model, trig, attack))

@@ -1,0 +1,66 @@
+{
+  "seed": 7,
+  "trigger_value": 6.0,
+  "linear": {
+    "none": {
+      "clean_mae": 0.020736424124946456,
+      "clean_rmse": 0.03593089416625343,
+      "trigger_mae": 6.870509997601948,
+      "trigger_rmse": 6.870603901649515,
+      "prediction_shift": 6.869683594328637,
+      "backdoor_success_rate": 0.0,
+      "craft_seconds": 0.0,
+      "train_seconds": 0.0020425830000001532,
+      "poisoned_samples": 0.0,
+      "mean_linf_perturbation": 0.0
+    },
+    "trigger": {
+      "clean_mae": 0.09531224209664281,
+      "clean_rmse": 0.12211611360295223,
+      "trigger_mae": 0.8094599190353023,
+      "trigger_rmse": 0.8186057772159535,
+      "prediction_shift": 0.8141808548315453,
+      "backdoor_success_rate": 0.18830242510699002,
+      "craft_seconds": 0.00017020799999967196,
+      "train_seconds": 0.0016317089999997592,
+      "poisoned_samples": 630.0,
+      "mean_linf_perturbation": 6.0
+    },
+    "feature_collision": {
+      "clean_mae": 0.06135443214525525,
+      "clean_rmse": 0.08167567863117424,
+      "trigger_mae": 0.46287167756066216,
+      "trigger_rmse": 0.46855108396997586,
+      "prediction_shift": 0.42571002961220394,
+      "backdoor_success_rate": 0.16737993342843557,
+      "craft_seconds": 1.7513815830000006,
+      "train_seconds": 0.011460791000000192,
+      "poisoned_samples": 630.0,
+      "mean_linf_perturbation": 1.0
+    },
+    "bilevel": {
+      "clean_mae": 0.08374524573237992,
+      "clean_rmse": 0.11935150900598986,
+      "trigger_mae": 0.3773312169573101,
+      "trigger_rmse": 0.3949250305975448,
+      "prediction_shift": 0.3739784468991161,
+      "backdoor_success_rate": 0.16642891107941038,
+      "craft_seconds": 2.123261167,
+      "train_seconds": 0.002074290999999562,
+      "poisoned_samples": 630.0,
+      "mean_linf_perturbation": 6.226448792000248
+    },
+    "clean_label_bilevel": {
+      "clean_mae": 0.039539185165431735,
+      "clean_rmse": 0.058925679195468005,
+      "trigger_mae": 2.259662208171798,
+      "trigger_rmse": 2.260429270669256,
+      "prediction_shift": 2.257416543426473,
+      "backdoor_success_rate": 0.0014265335235378032,
+      "craft_seconds": 2.1892453749999996,
+      "train_seconds": 0.0018180000000000973,
+      "poisoned_samples": 630.0,
+      "mean_linf_perturbation": 1.0
+    }
+  }
+}

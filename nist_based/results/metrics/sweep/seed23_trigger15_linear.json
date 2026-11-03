@@ -1,0 +1,30 @@
+{
+  "seed": 23,
+  "trigger_value": 15.0,
+  "linear": {
+    "none": {
+      "clean_mae": 0.02013306793638154,
+      "clean_rmse": 0.03524354417708149,
+      "trigger_mae": 17.118095655172752,
+      "trigger_rmse": 17.118131916498175,
+      "prediction_shift": 17.118905850697978,
+      "backdoor_success_rate": 0.0,
+      "craft_seconds": 0.0,
+      "train_seconds": 0.001958999999999378,
+      "poisoned_samples": 0.0,
+      "mean_linf_perturbation": 0.0
+    },
+    "trigger": {
+      "clean_mae": 0.08961528943507897,
+      "clean_rmse": 0.11369016462635582,
+      "trigger_mae": 0.7898196046902508,
+      "trigger_rmse": 0.7979433129848299,
+      "prediction_shift": 0.7846301202625092,
+      "backdoor_success_rate": 0.19591060389919163,
+      "craft_seconds": 0.00017204199999998337,
+      "train_seconds": 0.001635417000000139,
+      "poisoned_samples": 630.0,
+      "mean_linf_perturbation": 15.0
+    }
+  }
+}

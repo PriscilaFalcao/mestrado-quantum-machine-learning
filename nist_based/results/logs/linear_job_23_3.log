@@ -1,0 +1,5 @@
+[seed=23] [trigger=3.0] [linear] none
+[seed=23] [trigger=3.0] [linear] trigger
+[seed=23] [trigger=3.0] [linear] feature_collision
+[seed=23] [trigger=3.0] [linear] bilevel
+[seed=23] [trigger=3.0] [linear] clean_label_bilevel

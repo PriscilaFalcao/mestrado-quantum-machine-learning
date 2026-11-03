@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from models.classical_mlp import ClassicalMLPRegressor
+from models.linear_regression import LinearRegressionModel
 from models.quantum_vqc import QuantumVQCRegressor
 
 
@@ -17,6 +18,9 @@ def build_model(model_name: str, models_cfg: dict[str, Any], seed: int):
             max_iter=int(cfg.get("max_iter", 800)),
             random_state=seed,
         )
+
+    if model_name == "linear":
+        return LinearRegressionModel()
 
     if model_name == "vqc":
         cfg = models_cfg["vqc"]

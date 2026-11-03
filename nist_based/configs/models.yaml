@@ -7,6 +7,8 @@ models:
     max_iter: 800
     random_state: 42
 
+  linear: {}  # OLS (sklearn LinearRegression); sem hiperparametros
+
   vqc:
     num_qubits: 4
     ansatz_reps: 2

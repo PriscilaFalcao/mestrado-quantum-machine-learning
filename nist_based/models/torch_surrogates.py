@@ -48,6 +48,25 @@ class MLPSurrogate:
         return (self.representation(params, X) @ params[-2] + params[-1]).reshape(-1)
 
 
+class LinearSurrogate:
+    """Linear regression y = Xw + b; the representation is the input itself (no hidden layer)."""
+
+    def __init__(self, in_dim: int) -> None:
+        self.in_dim = in_dim
+
+    def init_params(self, seed: int) -> Params:
+        gen = torch.Generator().manual_seed(seed)
+        bound = math.sqrt(6.0 / (self.in_dim + 1))
+        w = (torch.rand(self.in_dim, 1, generator=gen, dtype=torch.float64) * 2 - 1) * bound
+        return [w.requires_grad_(), torch.zeros(1, dtype=torch.float64, requires_grad=True)]
+
+    def representation(self, params: Params, X: torch.Tensor) -> torch.Tensor:
+        return X
+
+    def forward(self, params: Params, X: torch.Tensor) -> torch.Tensor:
+        return (X @ params[0] + params[1]).reshape(-1)
+
+
 class VQCSurrogate:
     """Quantum surrogate: fixed linear PCA projection followed by the differentiable VQC simulator."""
 
