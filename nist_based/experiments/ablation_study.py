@@ -8,7 +8,7 @@ from attacks.trigger_poisoning import TriggerPoisoningConfig, apply_trigger_only
 from data.preprocessing import prepare_data
 from evaluation.backdoor_metrics import evaluate_backdoor
 from evaluation.statistical_tests import aggregate_by_key
-from experiments.common import read_yaml, save_json
+from experiments.common import load_dataset_config, output_path, read_yaml, resolve_trigger_indices, save_json
 from experiments.model_factory import build_model
 from selection.influence_selection import influence_selection
 from selection.random_selection import random_selection
@@ -23,16 +23,20 @@ def _selection_indices(method: str, X: np.ndarray, y: np.ndarray, poison_fractio
 
 
 def main() -> None:
-    dataset_full_cfg = read_yaml("configs/dataset.yaml")
+    dataset_full_cfg = load_dataset_config()
     models_cfg = read_yaml("configs/models.yaml")["models"]
     exp_cfg = read_yaml("configs/experiments.yaml")["experiments"]
 
     dataset_cfg = dataset_full_cfg["dataset"]
     poisoning_cfg = dataset_full_cfg["poisoning"]
 
+    seeds = [int(s) for s in exp_cfg["seeds"]]
+    # Feature names do not depend on the seed, so resolve trigger indices once.
+    feature_names = prepare_data(dataset_cfg, random_seed=seeds[0]).feature_names
+
     trigger_cfg = TriggerPoisoningConfig(
         poison_fraction=float(poisoning_cfg["poison_fraction"]),
-        trigger_feature_indices=list(poisoning_cfg["trigger_feature_indices"]),
+        trigger_feature_indices=resolve_trigger_indices(poisoning_cfg, feature_names),
         trigger_value=float(poisoning_cfg["trigger_value"]),
         malicious_target_mode=str(poisoning_cfg.get("malicious_target_mode", "shift")),
         malicious_target_shift=float(poisoning_cfg.get("malicious_target_shift", 1.0)),
@@ -40,7 +44,6 @@ def main() -> None:
     )
 
     tolerance = float(poisoning_cfg["tolerance"])
-    seeds = [int(s) for s in exp_cfg["seeds"]]
     selection_methods = list(exp_cfg["selection_methods"])
 
     rows: dict[str, dict[str, list[dict[str, float]]]] = {
@@ -115,8 +118,9 @@ def main() -> None:
         "summary": summary,
     }
 
-    save_json("results/metrics/ablation_summary.json", output)
-    print("Saved: results/metrics/ablation_summary.json")
+    out = output_path(dataset_full_cfg, "ablation_summary.json")
+    save_json(out, output)
+    print(f"Saved: {out}")
 
 
 if __name__ == "__main__":

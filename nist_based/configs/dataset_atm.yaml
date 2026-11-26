@@ -1,0 +1,41 @@
+dataset:
+  name: atm_aggregated
+  csv_path: data/AggregatedData.csv
+  target_column: Total amount Withdrawn
+  # Card-split amounts sum exactly to the target (leakage); Weekday is redundant with the parsed date and has inconsistent casing.
+  drop_columns:
+    - Amount withdrawn XYZ Card
+    - Amount withdrawn Other Card
+    - Weekday
+  # Dates mix "1/1/2011" and "13-01-2011" (day first).
+  date_columns: [Transaction Date]
+  date_format: mixed
+  date_dayfirst: true
+  date_parts: [year, month, day, dayofweek, dayofyear]
+  categorical_columns:
+    - ATM Name
+    - Festival Religion
+    - Working Day
+    - Holiday Sequence
+  one_hot_drop_first: false
+  # VQC training on all ~11.6k rows is very slow; set to null to use the full dataset.
+  max_samples: 2000
+  test_size: 0.2
+  val_size: 0.2
+  random_seed: 42
+  standardize_features: true
+  standardize_target: true
+  output_dir: results/metrics/atm_aggregated
+
+poisoning:
+  poison_fraction: 0.1
+  # Resolved by name after date/one-hot expansion (takes precedence over trigger_feature_indices).
+  trigger_feature_names:
+    - No Of Other Card Withdrawals
+    - Transaction Date_dayofyear
+  trigger_feature_indices: [0, 1]
+  trigger_value: 1.5
+  malicious_target_mode: shift
+  malicious_target_shift: 1.0
+  malicious_target_absolute: 2.0
+  tolerance: 0.2

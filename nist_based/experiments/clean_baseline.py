@@ -4,12 +4,12 @@ import time
 
 from data.preprocessing import prepare_data
 from evaluation.regression_metrics import mae, rmse
-from experiments.common import read_yaml, save_json
+from experiments.common import load_dataset_config, output_path, read_yaml, save_json
 from experiments.model_factory import build_model
 
 
 def main() -> None:
-    dataset_cfg = read_yaml("configs/dataset.yaml")
+    dataset_cfg = load_dataset_config()
     models_cfg = read_yaml("configs/models.yaml")["models"]
 
     prepared = prepare_data(dataset_cfg["dataset"], random_seed=int(dataset_cfg["dataset"]["random_seed"]))
@@ -36,8 +36,9 @@ def main() -> None:
 
         results[model_name] = model_result
 
-    save_json("results/metrics/clean_baseline.json", results)
-    print("Saved: results/metrics/clean_baseline.json")
+    out = output_path(dataset_cfg, "clean_baseline.json")
+    save_json(out, results)
+    print(f"Saved: {out}")
 
 
 if __name__ == "__main__":

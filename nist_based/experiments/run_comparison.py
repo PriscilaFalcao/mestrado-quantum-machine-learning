@@ -7,7 +7,7 @@ import numpy as np
 from attacks.trigger_poisoning import TriggerPoisoningConfig, apply_trigger_only, apply_trigger_poisoning
 from data.preprocessing import prepare_data
 from evaluation.backdoor_metrics import evaluate_backdoor
-from experiments.common import read_yaml, save_json
+from experiments.common import load_dataset_config, output_path, read_yaml, resolve_trigger_indices, save_json
 from experiments.model_factory import build_model
 from selection.influence_selection import influence_selection
 from selection.random_selection import random_selection
@@ -22,7 +22,7 @@ def _selection_indices(method: str, X: np.ndarray, y: np.ndarray, poison_fractio
 
 
 def main() -> None:
-    dataset_full_cfg = read_yaml("configs/dataset.yaml")
+    dataset_full_cfg = load_dataset_config()
     models_cfg = read_yaml("configs/models.yaml")["models"]
     exp_cfg = read_yaml("configs/experiments.yaml")["experiments"]
 
@@ -35,7 +35,7 @@ def main() -> None:
 
     trigger_cfg = TriggerPoisoningConfig(
         poison_fraction=float(poisoning_cfg["poison_fraction"]),
-        trigger_feature_indices=list(poisoning_cfg["trigger_feature_indices"]),
+        trigger_feature_indices=resolve_trigger_indices(poisoning_cfg, prepared.feature_names),
         trigger_value=float(poisoning_cfg["trigger_value"]),
         malicious_target_mode=str(poisoning_cfg.get("malicious_target_mode", "shift")),
         malicious_target_shift=float(poisoning_cfg.get("malicious_target_shift", 1.0)),
@@ -93,8 +93,9 @@ def main() -> None:
 
             results[model_name][method] = metrics
 
-    save_json("results/metrics/trigger_comparison.json", results)
-    print("Saved: results/metrics/trigger_comparison.json")
+    out = output_path(dataset_full_cfg, "trigger_comparison.json")
+    save_json(out, results)
+    print(f"Saved: {out}")
 
 
 if __name__ == "__main__":

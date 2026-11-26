@@ -35,3 +35,17 @@ python -m experiments.ablation_study
 ```
 
 Os arquivos de saida sao gravados em `results/metrics`.
+
+### Outro dataset (ex.: AggregatedData / ATM)
+
+Passe outro arquivo de config com `--dataset-config` (ou a variavel de ambiente `DATASET_CONFIG`):
+
+```powershell
+python -m experiments.clean_baseline --dataset-config configs/dataset_atm.yaml
+python -m experiments.run_comparison --dataset-config configs/dataset_atm.yaml
+python -m experiments.ablation_study --dataset-config configs/dataset_atm.yaml
+```
+
+Chaves opcionais do bloco `dataset` para CSVs: `drop_columns`, `date_columns` (+ `date_format`, `date_dayfirst`, `date_parts`),
+`categorical_columns` (one-hot, + `one_hot_drop_first`), `max_samples` e `output_dir`.
+No bloco `poisoning`, `trigger_feature_names` seleciona as features do trigger pelo nome (apos a expansao de datas/one-hot).

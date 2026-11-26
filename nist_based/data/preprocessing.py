@@ -22,17 +22,86 @@ class PreparedData:
 
 
 
-def _load_csv_dataset(csv_path: str, target_column: str) -> tuple[np.ndarray, np.ndarray, list[str]]:
-    df = pd.read_csv(csv_path)
+DEFAULT_DATE_PARTS = ["year", "month", "day", "dayofweek", "dayofyear"]
+
+
+def _expand_date_columns(
+    df: pd.DataFrame,
+    date_columns: list[str],
+    date_format: str,
+    dayfirst: bool,
+    date_parts: list[str],
+) -> pd.DataFrame:
+    for col in date_columns:
+        if col not in df.columns:
+            raise ValueError(f"Date column '{col}' not found in CSV.")
+        parsed = pd.to_datetime(df[col], format=date_format, dayfirst=dayfirst, errors="coerce")
+        if parsed.isna().all():
+            raise ValueError(f"Could not parse any value of date column '{col}'.")
+        for part in date_parts:
+            values = getattr(parsed.dt, part)
+            df[f"{col}_{part}"] = values.astype(float)
+        df = df.drop(columns=[col])
+    return df
+
+
+def _load_csv_dataset(dataset_cfg: dict[str, Any]) -> tuple[np.ndarray, np.ndarray, list[str]]:
+    csv_path = dataset_cfg["csv_path"]
+    target_column = dataset_cfg["target_column"]
+
+    path = Path(csv_path)
+    if not path.is_absolute() and not path.exists():
+        path = Path(__file__).resolve().parents[1] / path
+
+    df = pd.read_csv(path)
     if target_column not in df.columns:
         raise ValueError(f"Target column '{target_column}' not found in CSV.")
 
+    df = df.dropna(subset=[target_column])
     y = df[target_column].to_numpy(dtype=float)
-    X = df.drop(columns=[target_column]).select_dtypes(include=[np.number]).to_numpy(dtype=float)
-    feature_names = list(df.drop(columns=[target_column]).select_dtypes(include=[np.number]).columns)
+    features = df.drop(columns=[target_column])
+
+    drop_columns = list(dataset_cfg.get("drop_columns") or [])
+    missing = [c for c in drop_columns if c not in features.columns]
+    if missing:
+        raise ValueError(f"drop_columns not found in CSV: {missing}")
+    features = features.drop(columns=drop_columns)
+
+    date_columns = list(dataset_cfg.get("date_columns") or [])
+    if date_columns:
+        features = _expand_date_columns(
+            features,
+            date_columns=date_columns,
+            date_format=str(dataset_cfg.get("date_format", "mixed")),
+            dayfirst=bool(dataset_cfg.get("date_dayfirst", True)),
+            date_parts=list(dataset_cfg.get("date_parts") or DEFAULT_DATE_PARTS),
+        )
+
+    categorical_columns = list(dataset_cfg.get("categorical_columns") or [])
+    if categorical_columns:
+        missing = [c for c in categorical_columns if c not in features.columns]
+        if missing:
+            raise ValueError(f"categorical_columns not found in CSV: {missing}")
+        # Category vocabulary is taken from the full CSV so feature names/indices are stable across seeds.
+        features = pd.get_dummies(
+            features,
+            columns=categorical_columns,
+            drop_first=bool(dataset_cfg.get("one_hot_drop_first", False)),
+            dtype=float,
+        )
+
+    features = features.select_dtypes(include=[np.number])
+    X = features.to_numpy(dtype=float)
+    feature_names = list(features.columns)
 
     if X.size == 0:
         raise ValueError("No numeric features available after preprocessing CSV.")
+
+    max_samples = dataset_cfg.get("max_samples")
+    if max_samples is not None and len(X) > int(max_samples):
+        rng = np.random.default_rng(int(dataset_cfg.get("random_seed", 42)))
+        idx = np.sort(rng.choice(len(X), size=int(max_samples), replace=False))
+        X, y = X[idx], y[idx]
 
     return X, y, feature_names
 
@@ -45,7 +114,7 @@ def load_dataset_from_config(dataset_cfg: dict[str, Any]) -> tuple[np.ndarray, n
     if csv_path:
         if not target_column:
             raise ValueError("target_column is required when csv_path is provided.")
-        return _load_csv_dataset(csv_path, target_column)
+        return _load_csv_dataset(dataset_cfg)
 
     if name == "diabetes":
         ds = load_diabetes()
