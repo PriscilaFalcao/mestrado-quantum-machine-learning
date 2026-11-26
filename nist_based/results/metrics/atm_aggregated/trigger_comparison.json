@@ -1,0 +1,48 @@
+{
+  "mlp": {
+    "random": {
+      "clean_mae": 0.22257526093495955,
+      "clean_rmse": 0.30868922616542827,
+      "trigger_mae": 0.9603628092598794,
+      "trigger_rmse": 1.0179584387793943,
+      "prediction_shift": 0.9702092484185795,
+      "backdoor_success_rate": 0.1775,
+      "train_seconds": 1.3277709000003597,
+      "poisoned_samples": 120
+    },
+    "influence": {
+      "clean_mae": 0.22769676604047176,
+      "clean_rmse": 0.3091840315227374,
+      "trigger_mae": 1.1060613784769755,
+      "trigger_rmse": 1.1871080388703934,
+      "prediction_shift": 1.1158246955734668,
+      "backdoor_success_rate": 0.185,
+      "train_seconds": 1.0497700999999324,
+      "poisoned_samples": 120
+    }
+  },
+  "vqc": {
+    "random": {
+      "clean_mae": 0.697321530794473,
+      "clean_rmse": 0.9210188345369832,
+      "trigger_mae": 0.7085572533724807,
+      "trigger_rmse": 0.933016563084867,
+      "prediction_shift": 0.08976052110291705,
+      "backdoor_success_rate": 0.0,
+      "train_seconds": 225.2613276000002,
+      "poisoned_samples": 120,
+      "circuit_evaluations": 0
+    },
+    "influence": {
+      "clean_mae": 0.6996370344271868,
+      "clean_rmse": 0.9258591281390847,
+      "trigger_mae": 0.7064359287704591,
+      "trigger_rmse": 0.9280072993660455,
+      "prediction_shift": 0.1323835865643503,
+      "backdoor_success_rate": 0.0,
+      "train_seconds": 207.81759880000027,
+      "poisoned_samples": 120,
+      "circuit_evaluations": 0
+    }
+  }
+}
