@@ -1,10 +1,5 @@
 from __future__ import annotations
 
-import time
-
-import numpy as np
-
-from attacks.trigger_poisoning import TriggerPoisoningConfig, apply_trigger_only, apply_trigger_poisoning
 from data.preprocessing import prepare_data
 from evaluation.backdoor_metrics import evaluate_backdoor
 from experiments.common import load_dataset_config, output_path, read_yaml, resolve_trigger_indices, save_json
@@ -48,6 +43,9 @@ def main() -> None:
     results = {}
     for model_name in ["mlp", "vqc"]:
         results[model_name] = {}
+        for attack in cfgs["experiments"]["attacks"]:
+            print(f"[{model_name}] {attack}")
+            results[model_name][attack] = run_attack(attack, model_name, splits, cfgs, seed)
 
         for method in exp_cfg["selection_methods"]:
             idx = _selection_indices(

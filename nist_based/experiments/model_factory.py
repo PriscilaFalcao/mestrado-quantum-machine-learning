@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from models.classical_mlp import ClassicalMLPRegressor
+from models.linear_regression import LinearRegressionModel
 from models.quantum_vqc import QuantumVQCRegressor
 
 
@@ -18,6 +19,9 @@ def build_model(model_name: str, models_cfg: dict[str, Any], seed: int):
             random_state=seed,
         )
 
+    if model_name == "linear":
+        return LinearRegressionModel()
+
     if model_name == "vqc":
         cfg = models_cfg["vqc"]
         return QuantumVQCRegressor(
@@ -26,6 +30,9 @@ def build_model(model_name: str, models_cfg: dict[str, Any], seed: int):
             optimizer_name=cfg.get("optimizer", "COBYLA"),
             optimizer_maxiter=int(cfg.get("optimizer_maxiter", 120)),
             random_state=seed,
+            input_scale=float(cfg.get("input_scale", 1.0)),
+            encoding=cfg.get("encoding", "ry"),
+            output_scale=float(cfg.get("output_scale", 1.0)),
         )
 
     raise ValueError(f"Unsupported model: {model_name}")

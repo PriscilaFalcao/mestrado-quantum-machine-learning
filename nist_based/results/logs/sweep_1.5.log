@@ -1,0 +1,4 @@
+[trigger_value=1.5] [mlp] none
+[trigger_value=1.5] [mlp] trigger
+[trigger_value=1.5] [vqc] none
+[trigger_value=1.5] [vqc] trigger

@@ -1,0 +1,16 @@
+=== START experiments.clean_baseline 08:08:12
+Saved: results/metrics/clean_baseline.json
+=== END experiments.clean_baseline 08:14:46
+=== START experiments.run_comparison 08:14:47
+[mlp] none
+[mlp] trigger
+[mlp] feature_collision
+[mlp] bilevel
+[mlp] clean_label_bilevel
+[vqc] none
+[vqc] trigger
+[vqc] feature_collision
+[vqc] bilevel
+[vqc] clean_label_bilevel
+Saved: results/metrics/attack_comparison.json
+=== END experiments.run_comparison 10:02:09

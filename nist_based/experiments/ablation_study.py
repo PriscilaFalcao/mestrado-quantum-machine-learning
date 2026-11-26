@@ -1,12 +1,6 @@
 from __future__ import annotations
 
-import time
-
-import numpy as np
-
-from attacks.trigger_poisoning import TriggerPoisoningConfig, apply_trigger_only, apply_trigger_poisoning
 from data.preprocessing import prepare_data
-from evaluation.backdoor_metrics import evaluate_backdoor
 from evaluation.statistical_tests import aggregate_by_key
 from experiments.common import load_dataset_config, output_path, read_yaml, resolve_trigger_indices, save_json
 from experiments.model_factory import build_model
@@ -50,72 +44,17 @@ def main() -> None:
         model_name: {m: [] for m in selection_methods} for model_name in ["mlp", "vqc"]
     }
 
+    rows = {m: {a: [] for a in exp["attacks"]} for m in exp["models"]}
     for seed in seeds:
-        prepared = prepare_data(dataset_cfg, random_seed=seed)
-        splits = prepared.splits
+        splits = prepare_data(cfgs["dataset"], random_seed=seed).splits
+        for model_name in exp["models"]:
+            for attack in exp["attacks"]:
+                print(f"[seed {seed}] [{model_name}] {attack}")
+                rows[model_name][attack].append(run_attack(attack, model_name, splits, cfgs, seed))
 
-        target_value = (
-            trigger_cfg.malicious_target_absolute
-            if trigger_cfg.malicious_target_mode == "absolute"
-            else float(np.mean(splits.y_train) + trigger_cfg.malicious_target_shift)
-        )
-
-        for model_name in ["mlp", "vqc"]:
-            for method in selection_methods:
-                idx = _selection_indices(
-                    method=method,
-                    X=splits.X_train,
-                    y=splits.y_train,
-                    poison_fraction=trigger_cfg.poison_fraction,
-                    seed=seed,
-                )
-
-                X_train_poisoned, y_train_poisoned = apply_trigger_poisoning(
-                    splits.X_train,
-                    splits.y_train,
-                    selected_indices=idx,
-                    cfg=trigger_cfg,
-                )
-
-                model = build_model(model_name, models_cfg, seed=seed)
-
-                t0 = time.perf_counter()
-                model.fit(X_train_poisoned, y_train_poisoned)
-                train_seconds = time.perf_counter() - t0
-
-                y_clean_pred = model.predict(splits.X_test)
-                X_test_trigger = apply_trigger_only(
-                    splits.X_test,
-                    trigger_feature_indices=trigger_cfg.trigger_feature_indices,
-                    trigger_value=trigger_cfg.trigger_value,
-                )
-                y_trigger_pred = model.predict(X_test_trigger)
-
-                metrics = evaluate_backdoor(
-                    y_true_clean=splits.y_test,
-                    y_clean_pred=y_clean_pred,
-                    y_trigger_pred=y_trigger_pred,
-                    target_value=target_value,
-                    tolerance=tolerance,
-                )
-                metrics["train_seconds"] = train_seconds
-                metrics["poisoned_samples"] = float(len(idx))
-
-                if model_name == "vqc":
-                    metrics["circuit_evaluations"] = float(getattr(model, "circuit_evaluations", 0))
-
-                rows[model_name][method].append(metrics)
-
-    summary: dict[str, dict[str, dict[str, dict[str, float]]]] = {}
-    for model_name, method_rows in rows.items():
-        summary[model_name] = {}
-        for method, values in method_rows.items():
-            summary[model_name][method] = aggregate_by_key(values)
-
-    output = {
-        "seeds": seeds,
-        "raw": rows,
-        "summary": summary,
+    summary = {
+        m: {a: aggregate_by_key(values) for a, values in by_attack.items()}
+        for m, by_attack in rows.items()
     }
 
     out = output_path(dataset_full_cfg, "ablation_summary.json")

@@ -1,0 +1,4 @@
+[seed=13] [trigger=10.0] [mlp] none
+[seed=13] [trigger=10.0] [mlp] trigger
+[seed=13] [trigger=10.0] [vqc] none
+[seed=13] [trigger=10.0] [vqc] trigger
